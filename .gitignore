@@ -1,0 +1,31 @@
+# dependencies
+node_modules
+__pycache__
+
+# build
+dist
+build
+
+# logs
+*.log
+npm-debug.log*
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+#python
+venv
+
+backend/.env
+fastapi/.env
+frontend/.env
+.env
+
+fastapi/temp_audio

@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+motor
+pydantic
+python-jose
+passlib
+bcrypt
+python-multipart
+email-validator
+pathlib
+groq
+scipy
+librosa
+numpy
