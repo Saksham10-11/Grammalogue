@@ -29,3 +29,5 @@ frontend/.env
 .env
 
 fastapi/temp_audio
+
+docker-compose.yaml

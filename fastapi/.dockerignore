@@ -1,0 +1,7 @@
+__pycache__/
+venv/
+temp_audio/
+config/__pycache__/
+models/__pycache__/
+routers/__pycache__/
+.env
