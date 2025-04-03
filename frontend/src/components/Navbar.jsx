@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, User} from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { GithubOutlined } from "@ant-design/icons";
@@ -13,20 +13,25 @@ function Navbar(props) {
   const handleLogin = () => navigate("/login");
   const handleSignUp = () => navigate("/register");
   const handleGithubClick = () => {
-    window.location.href = "https://github.com/AryaK19/AI-driven-English-communication-assessment-system/tree/main";
+    window.location.href =
+      "https://github.com/AryaK19/AI-driven-English-communication-assessment-system/tree/main";
   };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container px-4 mx-auto">
+      <div className="container pl-4">
         <div className="flex justify-between h-20">
           {/* Logo with hover animation */}
-          <motion.div 
+          <motion.div
             className="flex items-center"
             whileHover={{ scale: 1.02 }}
           >
             <Link to="/" className="flex items-center">
-              <img src="/images/logo.png" alt="Logo" className="h-24" />
+              <img
+                src="/images/logo.png"
+                alt="Logo"
+                style={{ height: "4rem" }}
+              />
             </Link>
           </motion.div>
 
@@ -54,14 +59,14 @@ function Navbar(props) {
 
           {props.isUserAuthenticated && (
             <div className="hidden md:flex items-center space-x-6">
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleGithubClick}
-            className="text-gray-700 hover:text-brand-blue transition-colors"
-          >
-            <GithubOutlined style={{ fontSize: '28px' }} />
-          </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleGithubClick}
+                className="text-gray-700 hover:text-brand-blue transition-colors"
+              >
+                <GithubOutlined style={{ fontSize: "28px" }} />
+              </motion.button>
               <Profile />
             </div>
           )}

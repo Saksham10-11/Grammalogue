@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  UserCircle, 
-  Video, 
-  Brain, 
-  FileText, 
+import {
+  UserCircle,
+  Video,
+  Brain,
+  FileText,
   ChevronRight,
   Languages,
   GraduationCap,
-  Target
+  Target,
 } from "lucide-react";
 
 function Home() {
@@ -17,30 +17,30 @@ function Home() {
 
   const supportedLanguages = [
     "English",
-    "Hindi" ,
+    "Hindi",
     "Bengali",
     // "Gujarati",
     "Kannada",
     // "Malayalam",
     "Marathi",
     "Punjabi",
-    "Tamil" ,
-    "Telugu" ,
+    "Tamil",
+    "Telugu",
   ];
 
   const difficultyLevels = [
     {
       level: "Beginner",
-      description: "Essential communication skills and fundamental concepts"
+      description: "Essential communication skills and fundamental concepts",
     },
     {
       level: "Intermediate",
-      description: "Professional discourse and business communication"
+      description: "Professional discourse and business communication",
     },
     {
       level: "Advanced",
-      description: "Technical discussions and specialized terminology"
-    }
+      description: "Technical discussions and specialized terminology",
+    },
   ];
 
   const features = [
@@ -79,8 +79,12 @@ function Home() {
       {/* Hero Section with Logo */}
       <section className="text-center space-y-8 py-10 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-brand-blue/5 to-brand-purple/5" />
-        <div className="max-w-xs mx-auto mb-8">
-          <img src="\images\logo.png" alt="PluginLive Logo" className="w-full" />
+        <div className="max-w-md mx-auto mb-4">
+          <img
+            src="/images/logo.png"
+            alt="PluginLive Logo"
+            className="w-full h-auto"
+          />
         </div>
         <h1 className="text-6xl font-bold text-gray-900 relative">
           Professional <span className="text-brand-blue">Communication</span>{" "}
@@ -88,7 +92,10 @@ function Home() {
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
           Advanced communication assessment platform supporting
-          <span className="text-brand-purple font-semibold"> multiple languages and industries</span>
+          <span className="text-brand-purple font-semibold">
+            {" "}
+            multiple languages and industries
+          </span>
         </p>
         <button
           className="bg-brand-blue text-white px-10 py-4 rounded-lg hover:bg-brand-purple 
@@ -101,7 +108,9 @@ function Home() {
 
       {/* Language Support Grid */}
       <section className="px-4">
-        <h2 className="text-3xl font-bold text-center mb-8">Available Languages</h2>
+        <h2 className="text-3xl font-bold text-center mb-8">
+          Available Languages
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {supportedLanguages.map((language, index) => (
             <div
@@ -109,7 +118,9 @@ function Home() {
               className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-all
               text-center border-2 border-brand-blue/20 hover:border-brand-blue"
             >
-              <span className="text-lg font-semibold text-brand-blue">{language}</span>
+              <span className="text-lg font-semibold text-brand-blue">
+                {language}
+              </span>
             </div>
           ))}
         </div>
@@ -117,10 +128,15 @@ function Home() {
 
       {/* Assessment Levels */}
       <section className="bg-gradient-to-r from-brand-blue to-brand-purple p-16 rounded-2xl text-white">
-        <h2 className="text-3xl font-bold text-center mb-8">Assessment Levels</h2>
+        <h2 className="text-3xl font-bold text-center mb-8">
+          Assessment Levels
+        </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {difficultyLevels.map((diff, index) => (
-            <div key={index} className="bg-white/10 p-6 rounded-xl backdrop-blur-lg">
+            <div
+              key={index}
+              className="bg-white/10 p-6 rounded-xl backdrop-blur-lg"
+            >
               <h3 className="text-2xl font-bold mb-4">{diff.level}</h3>
               <p className="opacity-90">{diff.description}</p>
             </div>
