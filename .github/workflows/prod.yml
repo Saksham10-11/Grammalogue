@@ -133,9 +133,16 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:latest
           cache-to: type=inline
-          script: |
-            echo "Testing SSH connection"
-            ssh -i ${{ secrets.DROPLET_SSH_KEY }} -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} "echo 'SSH connection successful'"
+
+      # Add a separate step for testing SSH connection
+      - name: Test SSH Connection
+        run: |
+          echo "Testing SSH connection"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DROPLET_SSH_KEY }}" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+          ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} "echo 'SSH connection successful'"
 
   deploy:
     needs: build-and-push-images
