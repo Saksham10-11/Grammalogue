@@ -134,7 +134,7 @@ jobs:
 
   deploy:
     needs: build-and-push-images
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     
     steps:
