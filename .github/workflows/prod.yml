@@ -64,6 +64,8 @@ jobs:
       - name: Test FastAPI
         working-directory: ./fastapi
         run: pytest || echo "No tests or tests failed"
+        
+
 
   build-and-push-images:
     needs: build-and-test
@@ -131,6 +133,9 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:latest
           cache-to: type=inline
+          script: |
+            echo "Testing SSH connection"
+            ssh -i ${{ secrets.DROPLET_SSH_KEY }} -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} "echo 'SSH connection successful'"
 
   deploy:
     needs: build-and-push-images
