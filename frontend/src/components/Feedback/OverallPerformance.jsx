@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const OverallPerformance = ({ 
+const OverallPerformance = ({
   overallScore,
   overallStats,
   grammarPerformance,
@@ -10,6 +10,8 @@ const OverallPerformance = ({
   fluencyPerformance,
   vocabularyPerformance,
   correctnessPerformance,
+  pausePerformance,
+  speedPerformance,
   showDetailedFeedback,
   setShowDetailedFeedback
 }) => {
@@ -28,69 +30,74 @@ const OverallPerformance = ({
     return 'Needs Improvement';
   };
 
-  // Calculate pause performance (lower pauses is better)
-  const pausePerformance = Math.max(0, Math.min(100, 100 - (overallStats.totalPauses / overallStats.totalQuestions * 10)));
-
   // Calculate overall score with weighted metrics
   const calculatedOverallScore = Math.round(
     (grammarPerformance * 0.25) +      // 25% weight for grammar
-    (pronunciationPerformance * 0.05) + // 20% weight for pronunciation
-    (fluencyPerformance * 0.15) +       // 20% weight for fluency
+    (pronunciationPerformance * 0.05) + // 5% weight for pronunciation
+    (fluencyPerformance * 0.15) +       // 15% weight for fluency
     (pausePerformance * 0.15) +         // 15% weight for speech pauses
-    (correctnessPerformance * 0.40)     // 20% weight for answer correctness (using the new score)
+    (speedPerformance * 0.10) +         // 10% weight for speech speed
+    (correctnessPerformance * 0.30)     // 30% weight for answer correctness
   );
 
   // Define metrics with special handling for vocabulary
   const metrics = [
-    { 
-      label: 'Grammar', 
-      performance: grammarPerformance, 
-      count: overallStats.totalGrammarErrors, 
+    {
+      label: 'Grammar',
+      performance: grammarPerformance,
+      count: overallStats.totalGrammarErrors,
       unit: 'mistakes',
       showPerformance: true,
       weight: '25%'
     },
-    { 
-      label: 'Pronunciation', 
-      performance: pronunciationPerformance, 
-      count: overallStats.totalPronunciationErrors, 
+    {
+      label: 'Pronunciation',
+      performance: pronunciationPerformance,
+      count: overallStats.totalPronunciationErrors,
       unit: 'challenges',
       showPerformance: true,
       weight: '5%'
     },
-    { 
-      label: 'Fluency', 
-      performance: fluencyPerformance, 
-      count: overallStats.totalFillerWords, 
+    {
+      label: 'Fluency',
+      performance: fluencyPerformance,
+      count: overallStats.totalFillerWords,
       unit: 'filler words',
       showPerformance: true,
       weight: '15%'
     },
-    { 
-      label: 'Speech Pauses', 
-      performance: pausePerformance, 
-      count: overallStats.totalPauses, 
+    {
+      label: 'Speech Pauses',
+      performance: pausePerformance,
+      count: overallStats.totalPauses,
       unit: 'pauses',
       showPerformance: true,
       weight: '15%'
     },
-    { 
-      label: 'Answer Correctness', 
-      performance: correctnessPerformance, 
+    {
+      label: 'Speech Speed',
+      performance: speedPerformance,
+      text: overallStats.speedCount > 0 ? `${Math.round(overallStats.totalWpm / overallStats.speedCount)} words/min` : 'N/A',
+      showPerformance: true,
+      weight: '10%'
+    },
+    {
+      label: 'Answer Correctness',
+      performance: correctnessPerformance,
       text: 'Based on relevance and quality',
       showPerformance: true,
-      weight: '40%'
+      weight: '30%'
     },
-    { 
-      label: 'Vocabulary', 
-      count: overallStats.totalAdvancedWords, 
+    {
+      label: 'Vocabulary',
+      count: overallStats.totalAdvancedWords,
       unit: 'advanced words used',
       showPerformance: false
     },
   ];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.2 }}
@@ -99,7 +106,7 @@ const OverallPerformance = ({
       <h2 className="text-2xl font-semibold mb-4">Overall Performance</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Overall Score - Left Side */}
-        <motion.div 
+        <motion.div
           className="flex flex-col items-center justify-center"
           whileHover={{ scale: 1.02 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -107,7 +114,7 @@ const OverallPerformance = ({
           <div className="relative w-48 h-48">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <motion.div 
+                <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, delay: 0.5 }}
@@ -149,7 +156,8 @@ const OverallPerformance = ({
               {getScoreGrade(calculatedOverallScore)}
             </div>
             <p className="text-sm text-gray-600">
-              Based on Grammar (25%), Pronunciation (5%), Fluency (15%), Speech Pauses (15%), and Answer Correctness (40%)
+              Based on Grammar (25%), Pronunciation (5%), Fluency (15%),
+              Speech Pauses (15%), Speech Speed (10%), and Answer Correctness (30%)
             </p>
           </div>
         </motion.div>
@@ -157,7 +165,7 @@ const OverallPerformance = ({
         {/* Performance Metrics - Right Side */}
         <div className="space-y-4">
           {metrics.map((metric, index) => (
-            <motion.div 
+            <motion.div
               key={metric.label}
               initial={{ x: 50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -179,7 +187,7 @@ const OverallPerformance = ({
               </div>
               {metric.showPerformance && (
                 <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div 
+                  <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${metric.performance}%` }}
                     transition={{ duration: 0.8, delay: index * 0.1 + 0.3 }}

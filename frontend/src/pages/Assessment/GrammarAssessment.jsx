@@ -70,7 +70,7 @@ function GrammarAssessment() {
     try {
       const result = await sendMediaToServer(mediaBlob, currentQuestionIndex, currentQuestionText, setupData?.language || "English");
       setTranscribedText(result.transcribedText);
-      
+
       // Create a URL for the video blob
       const videoUrl = URL.createObjectURL(mediaBlob);
       setVideoUrls(prev => {
@@ -134,8 +134,8 @@ function GrammarAssessment() {
 
       mediaRecorderRef.current.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
-        const mediaBlob = new Blob(chunksRef.current, { 
-          type: mediaRecorderRef.current.mimeType 
+        const mediaBlob = new Blob(chunksRef.current, {
+          type: mediaRecorderRef.current.mimeType
         });
 
         try {
@@ -227,12 +227,25 @@ function GrammarAssessment() {
       return;
     }
 
+    // Add recording duration to the feedback data
+    const feedbackWithDuration = feedbackData.map((item, index) => {
+      return {
+        ...item,
+        recordingDuration: index === currentQuestionIndex ? recordingDuration : undefined
+      };
+    });
+
     localStorage.setItem('assessmentFeedback', JSON.stringify({
       questions,
-      feedback: feedbackData,
-      setup: setupData,
-      videoUrls: videoUrls
+      feedback: feedbackWithDuration,
+      setup: {
+        ...setupData,
+        recordingDuration: recordingDuration
+      },
+      videoUrls: videoUrls,
+      recordingDuration: recordingDuration
     }));
+
     navigate('/dashboard/assessment/feedback');
   };
 
@@ -316,7 +329,7 @@ function GrammarAssessment() {
           formatTime={formatTime}
           MAX_RECORDING_TIME={MAX_RECORDING_TIME}
         />
-        
+
         <VideoPreview videoRef={videoRef} isRecording={isRecording} />
       </motion.div>
 

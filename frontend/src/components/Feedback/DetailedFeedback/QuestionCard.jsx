@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import VideoPlayer from './VideoPlayer';
 import IdealAnswerSection from './IdealAnswerSection';
 import AssessmentSection from './AssessmentSection';
+import SpeechSpeedSection from './SpeechSpeedSection';
 
 const QuestionCard = ({
   index,
@@ -14,16 +15,20 @@ const QuestionCard = ({
   loadingIdealAnswer,
   idealAnswer
 }) => {
+  console.log(`QuestionCard ${index} feedback:`, feedback);
   // Helper function to safely get text content
   const getQuestionText = (text) => {
     if (!text) return '';
     return typeof text === 'string' ? text : text.text || '';
   };
 
+  // Debug console log to check the feedback structure
+  console.log("Feedback data for question", index, ":", feedback);
+
   const questionText = getQuestionText(question);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
@@ -47,7 +52,7 @@ const QuestionCard = ({
       </motion.div>
 
       {/* Expanded Content */}
-      <div 
+      <div
         data-question-content
         style={{
           display: isExpanded ? 'block' : 'none',
@@ -60,12 +65,12 @@ const QuestionCard = ({
         {feedback && (
           <>
             <VideoPlayer videoUrl={feedback.videoUrl} />
-            
+
             <div className="text-gray-600">
               Your answer: {feedback.text}
             </div>
 
-            <IdealAnswerSection 
+            <IdealAnswerSection
               question={questionText}
               answer={feedback.text}
               index={index}
@@ -75,6 +80,9 @@ const QuestionCard = ({
             />
 
             <AssessmentSection feedback={feedback} />
+
+            {/* Add Speech Speed Section */}
+            <SpeechSpeedSection feedback={feedback} />
           </>
         )}
       </div>

@@ -8,10 +8,10 @@ import { saveAssessment, deleteAssessment } from '../../services/assessmentServi
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-import { 
-  calculateOverallStats, 
-  calculatePerformanceScores, 
-  calculateOverallScore 
+import {
+  calculateOverallStats,
+  calculatePerformanceScores,
+  calculateOverallScore
 } from '../../utils/scoreCalculations';
 
 const FeedbackPage = () => {
@@ -27,7 +27,7 @@ const FeedbackPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  
+
   // Ref for PDF generation to capture the entire feedback content
   const contentRef = useRef(null);
 
@@ -44,7 +44,38 @@ const FeedbackPage = () => {
     const storedData = localStorage.getItem('assessmentFeedback');
     console.log("Stored data:", storedData);
     if (storedData) {
-      setAssessmentData(JSON.parse(storedData));
+      try {
+        const parsedData = JSON.parse(storedData);
+
+        // Add speech speed calculation if missing
+        if (parsedData && parsedData.feedback) {
+          parsedData.feedback = parsedData.feedback.map(feedback => {
+            if (feedback && !feedback.speed && feedback.text) {
+              // Calculate estimated speech speed
+              const wordsCount = feedback.text.split(/\s+/).length;
+              const estimatedDuration = feedback.duration || 60; // Default to 60 seconds
+              const estimatedWpm = Math.round((wordsCount / estimatedDuration) * 60);
+
+              return {
+                ...feedback,
+                speed: {
+                  wpm: estimatedWpm,
+                  score: estimatedWpm > 180 || estimatedWpm < 120 ? 75 : 90,
+                  feedback: "Speaking rate analysis (estimated from word count and duration).",
+                  category: estimatedWpm > 180 ? "too_fast" : estimatedWpm < 120 ? "too_slow" : "optimal",
+                  duration: estimatedDuration
+                }
+              };
+            }
+            return feedback;
+          });
+        }
+
+        setAssessmentData(parsedData);
+        console.log("Processed assessment data:", parsedData);
+      } catch (error) {
+        console.error("Error parsing assessment data:", error);
+      }
     }
   }, []);
 
@@ -53,7 +84,7 @@ const FeedbackPage = () => {
     try {
       setLoadingIdealAnswer(prev => ({ ...prev, [index]: true }));
       const result = await getIdealAnswer(question, answer);
-      
+
       // Parse response data, handling both string and object formats
       let parsedData;
       try {
@@ -94,12 +125,12 @@ const FeedbackPage = () => {
     try {
       setIsSaving(true);
       setUploadProgress(0);
-  
+
       const savedAssessment = await saveAssessment(
-        assessmentData, 
+        assessmentData,
         (progress) => setUploadProgress(progress)
       );
-  
+
       console.log("Assessment data ready to save:", savedAssessment);
       alert("Assessment saved successfully!");
     } catch (error) {
@@ -117,7 +148,7 @@ const FeedbackPage = () => {
       const assessmentId = location.pathname.split('/')[3];
       await deleteAssessment(assessmentId);
       alert("Assessment deleted successfully!");
-      navigate('/dashboard/reports'); 
+      navigate('/dashboard/reports');
     } catch (error) {
       console.error("Error deleting assessment:", error);
       alert(`Failed to delete assessment: ${error.message}`);
@@ -208,13 +239,13 @@ const FeedbackPage = () => {
 
   if (!assessmentData) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="container mx-auto p-6 text-center"
       >
         <p>No feedback data available.</p>
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/dashboard')}
@@ -238,37 +269,39 @@ const FeedbackPage = () => {
     pronunciationPerformance,
     fluencyPerformance,
     pausePerformance,
-    correctnessPerformance
+    correctnessPerformance,
+    speedPerformance
   } = performanceScores;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="container mx-auto p-6"
     >
       <div ref={contentRef} data-pdf-content>
-        <motion.h1 
+        <motion.h1
           initial={{ y: -20 }}
           animate={{ y: 0 }}
           className="text-3xl font-bold mb-6"
         >
           Assessment Feedback
         </motion.h1>
-        
+
         <OverallPerformance
           overallScore={overallScore}
           overallStats={overallStats}
           grammarPerformance={grammarPerformance}
           pronunciationPerformance={pronunciationPerformance}
           fluencyPerformance={fluencyPerformance}
-          correctnessPerformance={correctnessPerformance}
           pausePerformance={pausePerformance}
+          correctnessPerformance={correctnessPerformance}
+          speedPerformance={speedPerformance}
           showDetailedFeedback={showDetailedFeedback}
           setShowDetailedFeedback={setShowDetailedFeedback}
         />
 
-        <DetailedFeedback 
+        <DetailedFeedback
           showDetailedFeedback={showDetailedFeedback}
           assessmentData={assessmentData}
           expandedQuestion={expandedQuestions}
@@ -279,7 +312,7 @@ const FeedbackPage = () => {
         />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
@@ -306,7 +339,7 @@ const FeedbackPage = () => {
         </motion.button>
 
         {isFromOverallReport ? (
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.02, boxShadow: '0 4px 15px rgba(239, 68, 68, 0.25)' }}
             whileTap={{ scale: 0.98 }}
             onClick={handleDeleteAssessment}
@@ -327,7 +360,7 @@ const FeedbackPage = () => {
           </motion.button>
         ) : (
           <>
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.02, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.25)' }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSaveAssessment}
@@ -349,7 +382,7 @@ const FeedbackPage = () => {
 
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="w-full max-w-md bg-gray-200 rounded-full h-2.5">
-                <div 
+                <div
                   className="bg-green-600 h-2.5 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
@@ -358,7 +391,7 @@ const FeedbackPage = () => {
           </>
         )}
 
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.02, boxShadow: '0 4px 15px rgba(59, 130, 246, 0.25)' }}
           whileTap={{ scale: 0.98 }}
           onClick={() => navigate('/dashboard')}

@@ -10,6 +10,7 @@ import {
   Filter,
   Download,
   Search,
+  Mic,
 } from "lucide-react";
 import { getAllAssessments } from "../../services/assessmentService";
 import {
@@ -61,14 +62,16 @@ function OverallReport() {
                 fluencyPerformance,
                 pausePerformance,
                 correctnessPerformance,
+                speedPerformance,
               } = performanceScores;
 
               const overallScore = Math.round(
                 grammarPerformance * 0.25 +
-                  pronunciationPerformance * 0.05 +
-                  fluencyPerformance * 0.15 +
-                  pausePerformance * 0.15 +
-                  correctnessPerformance * 0.4
+                pronunciationPerformance * 0.05 +
+                fluencyPerformance * 0.15 +
+                pausePerformance * 0.15 +
+                speedPerformance * 0.10 +
+                correctnessPerformance * 0.30
               );
 
               console.log(overallScore);
@@ -85,10 +88,13 @@ function OverallReport() {
                 pronunciation: Math.round(
                   performanceScores.pronunciationPerformance
                 ),
+                speed: Math.round(performanceScores.speedPerformance), // Add speed
                 questions: totalQuestions,
                 type: parsedData.setup?.language || "English Assessment",
                 difficulty: parsedData.setup?.difficulty || "N/A",
                 topic: parsedData.setup?.topic || "General",
+                wpm: overallStats.speedCount > 0 ?
+                  Math.round(overallStats.totalWpm / overallStats.speedCount) : "N/A",
               };
             } catch (parseError) {
               console.error("Error parsing assessment data:", parseError);
@@ -202,7 +208,7 @@ function OverallReport() {
                   <Award className="w-6 h-6 text-brand-orange" />
                   <span className="text-2xl font-bold">{report.score}%</span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="grid grid-cols-4 gap-2 mt-3">
                   <div className="text-center p-2 bg-gray-50 rounded-lg">
                     <div className="text-sm text-gray-500">Fluency</div>
                     <div className="font-semibold text-brand-blue">
@@ -221,6 +227,12 @@ function OverallReport() {
                       {report.pronunciation}%
                     </div>
                   </div>
+                  <div className="text-center p-2 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-500">Speed</div>
+                    <div className="font-semibold text-brand-green">
+                      {report.speed}%
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -234,6 +246,12 @@ function OverallReport() {
                       second: "2-digit",
                     })}
                   </span>
+                  {report.wpm !== "N/A" && (
+                    <div className="ml-3 flex items-center gap-1" title="Words per minute">
+                      <Mic className="w-4 h-4 text-gray-500" />
+                      <span>{report.wpm} wpm</span>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => handleViewDetails(report.id)}
