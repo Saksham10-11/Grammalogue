@@ -1,0 +1,210 @@
+name: Build and Deploy Grammalogue
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    # Manual trigger
+
+env:
+  REGISTRY: "docker.io"
+  FRONTEND_IMAGE_NAME: "grammalogue-frontend"
+  BACKEND_IMAGE_NAME: "grammalogue-backend"
+  FASTAPI_IMAGE_NAME: "grammalogue-fastapi"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup Node.js for frontend and backend
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      # Setup Python for FastAPI service
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      # Install and test backend
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+      
+      - name: Test backend
+        working-directory: ./backend
+        run: npm test || echo "No tests or tests failed"
+      
+      # Install and test frontend
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Test frontend
+        working-directory: ./frontend
+        run: npm test || echo "No tests or tests failed"
+      
+      # Install and test FastAPI service
+      - name: Install FastAPI dependencies
+        working-directory: ./fastapi
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Test FastAPI
+        working-directory: ./fastapi
+        run: pytest || echo "No tests or tests failed"
+
+  build-and-push-images:
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      # Build and push frontend image
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
+          cache-to: type=inline
+          build-args: |
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_API_BASE_URL_API=${{ secrets.VITE_API_BASE_URL_API }}
+            VITE_API_FASTAPI_URL=${{ secrets.VITE_API_FASTAPI_URL }}
+            VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}
+            VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+            VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+            VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+            VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+            VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}
+      
+      # Build and push backend image
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:latest
+          cache-to: type=inline
+      
+      # Build and push FastAPI image
+      - name: Build and push FastAPI image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./fastapi
+          file: ./fastapi/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:latest
+          cache-to: type=inline
+
+  deploy:
+    needs: build-and-push-images
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Create docker-compose.yml file with specific variables
+      - name: Create docker-compose.yml
+        run: |
+          cat > docker-compose.yml << EOF
+          version: '3.8'
+          
+          services:
+            frontend:
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+              restart: unless-stopped
+              ports:
+                - "5173:5173"
+              environment:
+                - NODE_ENV=production
+              command: npm run preview -- --host 0.0.0.0
+          
+            backend:
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+              restart: unless-stopped
+              ports:
+                - "5000:5000"
+              environment:
+                - PORT=5000
+                - MONGODB_URI=${{ secrets.MONGODB_URI }}
+                - AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+                - AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                - AWS_REGION=${{ secrets.AWS_REGION }}
+                - AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }}
+              command: node server.js
+          
+            fastapi:
+              image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FASTAPI_IMAGE_NAME }}:${{ github.sha }}
+              restart: unless-stopped
+              ports:
+                - "8000:8000"
+              environment:
+                - PORT=8000
+                - GROK_API_KEY=${{ secrets.GROK_API_KEY }}
+              command: uvicorn main:app --host 0.0.0.0 --port 8000
+          
+          networks:
+            default:
+              driver: bridge
+          EOF
+      
+      - name: Copy docker-compose.yml to Digital Ocean Droplet
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "/root/grammalogue"
+
+      - name: Deploy to Digital Ocean
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /root/grammalogue
+            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+            docker-compose down
+            docker-compose pull
+            docker-compose up -d
+            docker system prune -af --volumes

@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import wave
 from groq import Groq
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
@@ -237,25 +238,73 @@ class FeedbackProcessor:
 
     async def analyze_text(self, text: str, question: Optional[str] = None, tempFileName: str = '') -> Dict:
         """
-        Analyze text for grammar, pronunciation, vocabulary, fluency and answer correctness.
+        Analyze text for grammar, pronunciation, vocabulary, fluency, pauses, speed and answer correctness.
         """
         grammar_analysis = await self.analyze_grammar(text)
         pronunciation_analysis = await self.analyze_pronunciation(text)
         vocabulary_analysis = analyze_vocabulary(text)
         fluency_analysis = self.analyze_fluency(text)
-
         pause_analysis = await self.analyze_pauses(text, tempFileName)
+        speed_analysis = self.analyze_speech_speed(text, tempFileName)  # Add speech speed analysis
         correctness_analysis = check_answer_correctness(question, text)
    
-
         feedback = {
             "grammar": grammar_analysis,
             "pronunciation": pronunciation_analysis,
             "vocabulary": vocabulary_analysis,
             "fluency": fluency_analysis,
-            "pauses": pause_analysis,  # Now returning the complete pause analysis
+            "pauses": pause_analysis,
+            "speed": speed_analysis,  # Add speed to feedback
             "correctness": correctness_analysis,
             "text": text
         }
 
         return feedback
+        
+    def analyze_speech_speed(self, text: str, audio_file: str = '') -> Dict:
+        """
+        Analyze speech speed in words per minute.
+        """
+        # Count words in the text
+        words_count = len(text.split())
+        
+        # Get audio duration from audio file or default to estimate based on word count
+        duration = 0
+        if audio_file and os.path.exists(audio_file):
+            try:
+                with wave.open(audio_file, 'rb') as wf:
+                    frames = wf.getnframes()
+                    rate = wf.getframerate()
+                    duration = frames / float(rate)
+            except Exception as e:
+                print(f"Error getting audio duration: {e}")
+                # Fallback to estimation
+                duration = len(text) / 15  # Rough estimate
+        else:
+            # Estimate duration if audio file not available
+            duration = len(text) / 15  # Rough estimate
+            
+        # Calculate words per minute (WPM)
+        wpm = (words_count / duration) * 60 if duration > 0 else 0
+        
+        # Evaluate speed performance
+        speed_score = 100
+        feedback = "Your speaking pace is excellent."
+        speed_category = "optimal"
+        
+        if wpm > 180:
+            speed_score = max(50, 100 - ((wpm - 180) / 2))
+            feedback = "Your speaking rate is too fast. Try to slow down for better clarity."
+            speed_category = "too_fast"
+        elif wpm < 120:
+            speed_score = max(50, 100 - ((120 - wpm) / 2))
+            feedback = "Your speaking rate is quite slow. Try to speak a bit faster to maintain engagement."
+            speed_category = "too_slow"
+            
+        return {
+            "wpm": round(wpm, 1),
+            "score": round(speed_score, 1),
+            "feedback": feedback,
+            "category": speed_category,
+            "duration": round(duration, 2)
+        }
