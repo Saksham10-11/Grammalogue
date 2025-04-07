@@ -141,6 +141,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
+      - name: Test SSH connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            echo "Connection successful"
+            mkdir -p /root/grammalogue
+      
       # Create docker-compose.yml file with specific variables
       - name: Create docker-compose.yml
         run: |
@@ -194,6 +204,9 @@ jobs:
           key: ${{ secrets.DROPLET_SSH_KEY }}
           source: "docker-compose.yml"
           target: "/root/grammalogue"
+          debug: true
+          timeout: 60s
+          command_timeout: 30m
 
       - name: Deploy to Digital Ocean
         uses: appleboy/ssh-action@master
