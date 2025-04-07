@@ -1,12 +1,5 @@
 # Project Title
 
-This project was created by:
-
-- [@Saksham10-11](https://github.com/Saksham10-11)
-- [@AryaK19](https://github.com/AryaK19)
-- [@vedant069](https://github.com/vedant069)
-- [@Harsh-Wardhan-404](https://github.com/Harsh-Wardhan-404)
-
 steps:
 
 check .env files
