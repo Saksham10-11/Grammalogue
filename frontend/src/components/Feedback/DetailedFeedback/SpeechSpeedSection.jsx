@@ -46,7 +46,7 @@ const SpeechSpeedSection = ({ feedback }) => {
 
         // Use a fixed duration for testing
         const FIXED_DURATION = 60; // 1 minute
-        const USE_FIXED_DURATION = true; // Set to false when you want to go back to automatic calculation
+        const USE_FIXED_DURATION = false; // Set to false when you want to go back to automatic calculation
 
         if (USE_FIXED_DURATION) {
           estimatedDuration = FIXED_DURATION;
