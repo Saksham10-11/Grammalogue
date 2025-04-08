@@ -153,20 +153,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Test SSH connection
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          debug: true
-          script: |
-            echo "Connection successful"
-            mkdir -p /root/grammalogue
-      
-      # Create docker-compose.yml file with specific variables
-      - name: Create docker-compose.yml
+      - name: Deploy with retries
         run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DROPLET_SSH_KEY }}" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+          ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
+          
+          # Create docker-compose.yml
           cat > docker-compose.yml << EOF
           version: '3.8'
           
@@ -208,29 +203,38 @@ jobs:
             default:
               driver: bridge
           EOF
-      
-      - name: Copy docker-compose.yml to Digital Ocean Droplet
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          source: "docker-compose.yml"
-          target: "/root/grammalogue"
-          debug: true
-          timeout: 60s
-          command_timeout: 30m
-
-      - name: Deploy to Digital Ocean
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          script: |
+          
+          # Function to retry commands
+          function retry {
+            local retries=$1
+            local wait=$2
+            shift 2
+            local count=0
+            until "$@"; do
+              exit=$?
+              count=$((count + 1))
+              if [ $count -lt $retries ]; then
+                echo "Retry attempt $count/$retries in $wait seconds..."
+                sleep $wait
+              else
+                return $exit
+              fi
+            done
+            return 0
+          }
+          
+          # Create directory with retry
+          retry 5 10 ssh -i ~/.ssh/key -o ConnectTimeout=30 ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} 'mkdir -p /root/grammalogue'
+          
+          # Copy docker-compose.yml with retry
+          retry 5 10 scp -i ~/.ssh/key -o ConnectTimeout=30 docker-compose.yml ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }}:/root/grammalogue/
+          
+          # Run deployment commands with retry
+          retry 5 10 ssh -i ~/.ssh/key -o ConnectTimeout=30 ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} '
             cd /root/grammalogue
-            docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
             docker-compose down
             docker-compose pull
             docker-compose up -d
             docker system prune -af --volumes
+          '
