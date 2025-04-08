@@ -164,13 +164,24 @@ const SpeechSpeedSection = ({ feedback }) => {
             return "Your speaking rate is optimal for clear communication.";
           } else if (wpm > 160 && wpm <= 180) {
             return "Your speaking rate is slightly faster than optimal, but still within an acceptable range.";
-          } else if (wpm > 180) {
+          } else if (wpm > 180 && wpm <= 220) {
             return "Your speaking rate is too fast. Consider slowing down to improve clarity.";
           } else if (wpm >= 100 && wpm < 120) {
             return "Your speaking rate is slightly slower than optimal, but still acceptable.";
-          } else {
+          } else if (wpm >= 80 && wpm < 100) {
             return "Your speaking rate is too slow. Consider speaking more fluently to maintain audience engagement.";
+          } else {
+            return "Your speaking rate is extremely " + (wpm > 220 ? "fast" : "slow") + ". This may significantly impact understanding and engagement.";
           }
+        }
+
+        function getSpeedCategory(wpm) {
+          if (wpm >= 120 && wpm <= 160) return "optimal";
+          if (wpm > 160 && wpm <= 180) return "slightly_fast";
+          if (wpm > 180 && wpm <= 220) return "too_fast";
+          if (wpm >= 100 && wpm < 120) return "slightly_slow";
+          if (wpm >= 80 && wpm < 100) return "too_slow";
+          return wpm > 220 ? "extremely_fast" : "extremely_slow";
         }
 
         // Create estimated speech data
@@ -181,7 +192,7 @@ const SpeechSpeedSection = ({ feedback }) => {
               wpm: estimatedWpm,
               score: calculatedScore,
               feedback: getFeedbackText(estimatedWpm),
-              category: estimatedWpm > 180 ? "too_fast" : estimatedWpm < 120 ? "too_slow" : "optimal",
+              category: getSpeedCategory(estimatedWpm),
               duration: estimatedDuration,
               source: durationSource
             }
@@ -226,7 +237,7 @@ const SpeechSpeedSection = ({ feedback }) => {
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="flex flex-wrap items-center gap-3 mb-3">
           <span className={`px-3 py-1 ${getCategoryStyle()} rounded-full text-sm font-medium`}>
-            {wpm} words per minute
+            {getCategoryLabel()}: {wpm} WPM
           </span>
 
           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -244,11 +255,14 @@ const SpeechSpeedSection = ({ feedback }) => {
           <p className="text-gray-700">{speedFeedback}</p>
 
           <div className="mt-3">
-            <h4 className="font-medium text-gray-700 mb-1">Optimal speaking rates:</h4>
+            <h4 className="font-medium text-gray-700 mb-1">Speaking Rate Categories:</h4>
             <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li>Conversational: 120-150 words per minute</li>
-              <li>Presentations: 140-160 words per minute</li>
-              <li>Professional speakers: 150-180 words per minute</li>
+              <li>Optimal: 120-160 WPM</li>
+              <li>Slightly fast: 161-180 WPM</li>
+              <li>Too fast: 181-220 WPM</li>
+              <li>Slightly slow: 100-119 WPM</li>
+              <li>Too slow: 80-99 WPM</li>
+              <li>Extremely fast/slow: Below 80 or above 220 WPM</li>
             </ul>
           </div>
         </div>
@@ -261,11 +275,32 @@ const SpeechSpeedSection = ({ feedback }) => {
     switch (category) {
       case 'too_fast':
         return 'bg-orange-100 text-orange-700';
+      case 'extremely_fast':
+        return 'bg-red-100 text-red-700';
+      case 'slightly_fast':
+        return 'bg-yellow-100 text-yellow-700';
       case 'too_slow':
         return 'bg-blue-100 text-blue-700';
+      case 'slightly_slow':
+        return 'bg-indigo-100 text-indigo-700';
+      case 'extremely_slow':
+        return 'bg-purple-100 text-purple-700';
       case 'optimal':
       default:
         return 'bg-green-100 text-green-700';
+    }
+  }
+
+  function getCategoryLabel() {
+    switch (category) {
+      case 'optimal': return 'Optimal';
+      case 'slightly_fast': return 'Slightly Fast';
+      case 'too_fast': return 'Too Fast';
+      case 'extremely_fast': return 'Extremely Fast';
+      case 'slightly_slow': return 'Slightly Slow';
+      case 'too_slow': return 'Too Slow';
+      case 'extremely_slow': return 'Extremely Slow';
+      default: return 'Unknown';
     }
   }
 };

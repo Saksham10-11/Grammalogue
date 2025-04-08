@@ -135,14 +135,14 @@ jobs:
           cache-to: type=inline
 
       # Add a separate step for testing SSH connection
-      - name: Test SSH Connection
+      - name: Test SSH Connection with Debug
         run: |
-          echo "Testing SSH connection"
+          echo "Testing SSH connection with verbose output"
           mkdir -p ~/.ssh
           echo "${{ secrets.DROPLET_SSH_KEY }}" > ~/.ssh/key
           chmod 600 ~/.ssh/key
           ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} "echo 'SSH connection successful'"
+          ssh -v -i ~/.ssh/key -o StrictHostKeyChecking=no ${{ secrets.DROPLET_USER }}@${{ secrets.DROPLET_IP }} "echo 'SSH connection successful'"
 
   deploy:
     needs: build-and-push-images
@@ -159,6 +159,7 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
+          debug: true
           script: |
             echo "Connection successful"
             mkdir -p /root/grammalogue

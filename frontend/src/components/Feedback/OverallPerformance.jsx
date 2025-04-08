@@ -1,6 +1,7 @@
 // components/OverallPerformance.jsx
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaBook, FaRunning, FaMicrophone, FaPen, FaCheck, FaPause, FaVolumeUp } from 'react-icons/fa';
 
 const OverallPerformance = ({
   overallScore,
@@ -75,26 +76,57 @@ const OverallPerformance = ({
       weight: '15%'
     },
     {
-      label: 'Speech Speed',
-      performance: speedPerformance,
-      text: overallStats.speedCount > 0 ? `${Math.round(overallStats.totalWpm / overallStats.speedCount)} words/min` : 'N/A',
-      showPerformance: true,
-      weight: '10%'
-    },
-    {
       label: 'Answer Correctness',
       performance: correctnessPerformance,
       text: 'Based on relevance and quality',
       showPerformance: true,
-      weight: '30%'
+      weight: '30%',
+      fullWidth: true
     },
+  ];
+
+  // Side-by-side metrics for vocabulary and speech speed
+  const sideByMetrics = [
     {
       label: 'Vocabulary',
       count: overallStats.totalAdvancedWords,
       unit: 'advanced words used',
-      showPerformance: false
+      showPerformance: false,
+      icon: <FaBook className="text-indigo-500" />,
+      color: 'from-indigo-500 to-blue-600',
+      textColor: 'text-indigo-700'
     },
+    {
+      label: 'Speech Speed',
+      performance: speedPerformance,
+      text: overallStats.speedCount > 0 ? `${Math.round(overallStats.totalWpm / overallStats.speedCount)} words/min` : 'N/A',
+      category: getSpeechSpeedCategory(overallStats.speedCount > 0 ? Math.round(overallStats.totalWpm / overallStats.speedCount) : 0),
+      showPerformance: false,
+      weight: '10%',
+      icon: <FaRunning className="text-green-500" />,
+      color: 'from-green-500 to-teal-600',
+      textColor: 'text-green-700'
+    }
   ];
+
+  // Function to determine speech speed category
+  function getSpeechSpeedCategory(wpm) {
+    if (wpm === 0) return 'N/A';
+    if (wpm > 180) return 'Too Fast';
+    if (wpm >= 140 && wpm <= 180) return 'Optimal for Presentation';
+    if (wpm >= 120 && wpm < 140) return 'Optimal for Conversation';
+    if (wpm < 120) return 'Slightly Slow';
+    return 'N/A';
+  }
+
+  // Function to get category badge color
+  function getCategoryBadgeColor(category) {
+    if (category === 'Too Fast') return 'bg-red-100 text-red-800';
+    if (category === 'Optimal for Presentation') return 'bg-blue-100 text-blue-800';
+    if (category === 'Optimal for Conversation') return 'bg-green-100 text-green-800';
+    if (category === 'Slightly Slow') return 'bg-yellow-100 text-yellow-800';
+    return 'bg-gray-100 text-gray-800';
+  }
 
   return (
     <motion.div
@@ -196,10 +228,63 @@ const OverallPerformance = ({
                 </div>
               )}
               <p className="text-xs text-gray-600 mt-1">
-                {metric.count !== undefined ? `${metric.count} ${metric.unit}` : metric.text}
+                {metric.count !== undefined ? `${metric.count} ${metric.unit}` : 
+                 metric.category ? `${metric.text} - ${metric.category}` : metric.text}
               </p>
             </motion.div>
           ))}
+
+          {/* Side-by-side metrics */}
+          <div className="grid grid-cols-2 gap-3">
+            {sideByMetrics.map((metric, index) => (
+              <motion.div
+                key={metric.label}
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: (metrics.length + index) * 0.1 + 0.3 }}
+                className={`rounded-lg hover:shadow-lg transition-all duration-300 h-full overflow-hidden`}
+              >
+                <div className={`bg-gradient-to-r ${metric.color} p-3 text-white`}>
+                  <div className="flex items-center gap-2">
+                    {metric.icon}
+                    <h3 className="text-sm font-semibold">{metric.label}</h3>
+                    {metric.weight && (
+                      <span className="text-xs text-white opacity-80">({metric.weight})</span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-white border-x border-b border-gray-200 rounded-b-lg">
+                  {metric.label === 'Vocabulary' ? (
+                    <div className="flex items-center justify-between">
+                      <span className={`text-lg font-bold ${metric.textColor}`}>
+                        {metric.count}
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        {metric.unit}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-lg font-bold ${metric.textColor}`}>
+                          {overallStats.speedCount > 0 ? Math.round(overallStats.totalWpm / overallStats.speedCount) : 'N/A'}
+                        </span>
+                        <span className="text-xs text-gray-600">
+                          words/min
+                        </span>
+                      </div>
+                      {metric.category && (
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getCategoryBadgeColor(metric.category)}`}>
+                          {metric.category}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
