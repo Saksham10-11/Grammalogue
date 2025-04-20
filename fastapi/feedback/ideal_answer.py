@@ -14,7 +14,7 @@ class IdealAnswerGenerator:
         if not api_key:
             raise ValueError("GROQ_API_KEY environment variable is not set")
         self.client = Groq(api_key=api_key)
-        self.model = "llama-3.2-3b-preview"
+        self.model = "llama-3.3-70b-versatile"
 
     def parse_llm_response(response: str) -> Dict:
         """Parse and validate LLM response with unicode support."""

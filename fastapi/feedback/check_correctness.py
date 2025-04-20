@@ -61,7 +61,7 @@ def analyze_response(question: str, answer: str) -> Tuple[float, str]:
                     "content": prompt
                 }
             ],
-            model="llama-3.2-3b-preview",
+            model="llama-3.3-70b-versatile",
             temperature=0.0,
         )
         

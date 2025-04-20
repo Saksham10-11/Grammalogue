@@ -140,7 +140,7 @@ class FeedbackProcessor:
                         "content": f"Analyze this text: {text}",
                     }
                 ],
-                model="llama-3.2-3b-preview",
+                model="llama-3.3-70b-versatile",
                 temperature=0.1,
             )
             
@@ -169,7 +169,7 @@ class FeedbackProcessor:
                         "content": f"Analyze this text: {text}",
                     }
                 ],
-                model="llama-3.2-3b-preview",
+                model="llama-3.3-70b-versatile",
                 temperature=0.1,
             )
             
